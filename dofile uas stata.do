@@ -78,6 +78,8 @@ gen dasing = DASING > 50 if DASING <.
 gen ddmstk = DDMSTK>50 if DDMSTK<.
 *Membuat dummy variabel perusahaan pemerintah
 gen dgovt = DPUSAT>50 | DPEMDA>50 if DPUSAT<.|DPEMDA<.
+*Membuat dummy variabel bahan impor dengan batas 50%
+gen dimpor = primpor>.5 if primpor<.
 
 **Removing Outliers
 *See statdesc
@@ -139,10 +141,25 @@ acfest y, state(k) proxy(i) free(l) i(PSID) intmat(m ef) t(year) nbs(200) invest
 acfest y, state(k) proxy(i) free(l) i(PSID) intmat(m ef) t(year) nbs(200) invest robust second
 
 *Estimasi Fungsi Produksi menggunakan variabel Output dengan ACF
-acfest va, state(k) proxy(i) free(l) i(PSID) intmat(m ef) t(year) nbs(200) va invest robust
-acfest va, state(k) proxy(i) free(l) i(PSID) intmat(m ef) t(year) nbs(200) va invest robust second
+acfest va, state(k) proxy(i) free(l) i(PSID) t(year) nbs(200) va invest robust
+acfest va, state(k) proxy(i) free(l) i(PSID) t(year) nbs(200) va invest robust second
 
 *Melakukan analisis lanjutan (overidentifiaction)
-acfest va, state(k) proxy(i) free(l) i(PSID) intmat(m ef) t(year) nbs(200) va overid invest robust second
+acfest va, state(k) proxy(i) free(l) i(PSID) t(year) nbs(200) va overid invest robust second
 predict omega_hat, omega
-histogram omega_hat, by(dasing ddmstk dgovt) 
+
+histogram omega_hat, by(dimpor)
+sktest omega_hat if dimpor==0
+sktest omega_hat if dimpor==1
+tabstat omega_hat if dimpor==0, stats(n mean median min max)
+tabstat omega_hat if dimpor==1, stats(n mean median min max)
+
+histogram omega_hat, by(ddmstk dgovt dasing)
+sktest omega_hat if ddmstk==1
+sktest omega_hat if dgovt==1
+sktest omega_hat if dasing==1
+tabstat omega_hat if ddmstk==1, stats(n mean median min max)
+tabstat omega_hat if dgovt==1, stats(n mean median min max)
+tabstat omega_hat if dasing==1, stats(n mean median min max)
+
+save SI2011-2015_UAS, replace
